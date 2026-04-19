@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    /* Base Options */
+    "target": "ES2022",                // Versão do JavaScript gerado
+    "module": "NodeNext",              // Usa padrão moderno do Node (ESM)
+    "moduleResolution": "NodeNext",    // Necessário com NodeNext
+    "lib": ["ES2022"],                 // Libs disponíveis no ambiente
+
+    /* Tipos do Node (ESSENCIAL) */
+    "types": ["node"],                 // Faz o TS reconhecer require, process, etc
+
+    /* Output */
+    "outDir": "./dist",                // Código compilado vai pra dist
+    "rootDir": "./src",                // Código fonte fica em src
+    "sourceMap": true,                 // Ajuda no debug
+    "removeComments": false,           // Mantém comentários (melhor pra aprendizado)
+
+    /* Interop & Type Checking */
+    "esModuleInterop": true,           // Permite importar libs CommonJS
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+
+  "include": ["src/**/*"],             // Arquivos incluídos
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
