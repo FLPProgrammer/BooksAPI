@@ -1,5 +1,6 @@
 import { BookRepository } from '../Repositories/BookRepository';
 import { IBook } from '../Types/Book';
+import { AppError } from '../Utils/AppError';
 
 export class BookService {
 
@@ -19,7 +20,7 @@ export class BookService {
         const book = this.bookRepository.getBook(id);
 
         if(!book) {
-            throw new Error('Esse livro não foi encontrado');
+            throw new AppError('Esse livro não foi encontrado');
         }
 
         return book;
@@ -27,13 +28,13 @@ export class BookService {
 
     createBook(book: IBook) {
         if(!book.name || !book.author) {
-            throw new Error('Dados inválidos!')
+            throw new AppError('Dados inválidos!')
         }
 
         const existing = this.bookRepository.getBook(book.id);
 
         if(existing) {
-            throw new Error('Esse livro já existe')
+            throw new AppError('Esse livro já existe')
         }
         return this.bookRepository.createBook(book)
     }
@@ -42,7 +43,7 @@ export class BookService {
         const updated = this.bookRepository.updateBook(id, data);
 
         if(!updated) {
-            throw new Error('Livro não encontrado!');
+            throw new AppError('Livro não encontrado!');
         }
 
         return updated;
@@ -52,7 +53,7 @@ export class BookService {
         const deleted = this.bookRepository.deleteBook(id);
 
         if(!deleted) {
-            throw new Error('Livro não encontrado para deletar');
+            throw new AppError('Livro não encontrado para deletar');
         }
 
         return true;
