@@ -7,7 +7,7 @@
     "lib": ["ES2022"],                 // Libs disponíveis no ambiente
 
     /* Tipos do Node (ESSENCIAL) */
-    "types": ["node"],                 // Faz o TS reconhecer require, process, etc
+    "types": ["node", "jest"],                 // Faz o TS reconhecer require, process, etc
 
     /* Output */
     "outDir": "./dist",                // Código compilado vai pra dist
@@ -23,5 +23,5 @@
   },
 
   "include": ["src/**/*"],             // Arquivos incluídos
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "exclude": ["node_modules"]
 }
