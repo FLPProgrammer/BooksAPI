@@ -1,60 +1,96 @@
 import { BookRepository } from '../Repositories/BookRepository';
 import { IBook } from '../Types/Book';
 import { AppError } from '../Utils/AppError';
+import { redisClient } from '../Utils/Redis';
 
 export class BookService {
-
     constructor(private bookRepository: BookRepository) {}
 
-    getAllBooks(): IBook[] {
+   
+    private readonly CACHE_KEY_ALL = 'books:all';
+    private getCacheKeyItem(id: number) { return `book:${id}`; }
+
+    async getAllBooks(): Promise<IBook[]> {
+       
+        const cached = await redisClient.get(this.CACHE_KEY_ALL);
+        if (cached) return JSON.parse(cached);
+
+       
         const books = this.bookRepository.getAllBooks();
         
-        if(!books.length) {
-            throw new Error('Nenhum livro foi encontrado')
+        if (!books.length) {
+            throw new AppError('Nenhum livro foi encontrado');
         }
 
-        return books
+       
+        await redisClient.set(this.CACHE_KEY_ALL, JSON.stringify(books), { EX: 3600 });
+
+        return books;
     }
 
-    getBook(id: number): IBook | undefined {
+    async getBook(id: number): Promise<IBook> {
+        const cacheKey = this.getCacheKeyItem(id);
+
+        
+        const cached = await redisClient.get(cacheKey);
+        if (cached) return JSON.parse(cached);
+
         const book = this.bookRepository.getBook(id);
 
-        if(!book) {
+        if (!book) {
             throw new AppError('Esse livro não foi encontrado');
         }
 
-        return book;
-}
+        
+        await redisClient.set(cacheKey, JSON.stringify(book), { EX: 3600 });
 
-    createBook(book: IBook) {
-        if(!book.name || !book.author) {
-            throw new AppError('Dados inválidos!')
+        return book;
+    }
+
+    async createBook(book: IBook): Promise<IBook> {
+        if (!book.name || !book.author) {
+            throw new AppError('Dados inválidos!');
         }
 
         const existing = this.bookRepository.getBook(book.id);
-
-        if(existing) {
-            throw new AppError('Esse livro já existe')
+        if (existing) {
+            throw new AppError('Esse livro já existe');
         }
-        return this.bookRepository.createBook(book)
+
+        const newBook = this.bookRepository.createBook(book);
+
+        await redisClient.del(this.CACHE_KEY_ALL);
+
+        return newBook;
     }
 
-    updateBook(id: number, data: Partial<IBook>): IBook | null {
+    async updateBook(id: number, data: Partial<IBook>): Promise<IBook> {
         const updated = this.bookRepository.updateBook(id, data);
 
-        if(!updated) {
+        if (!updated) {
             throw new AppError('Livro não encontrado!');
         }
+
+        await Promise.all([
+            redisClient.del(this.CACHE_KEY_ALL),
+            redisClient.del(this.getCacheKeyItem(id))
+        ]);
 
         return updated;
     }
 
-    deleteBook(id: number): boolean {
+    async deleteBook(id: number): Promise<boolean> {
         const deleted = this.bookRepository.deleteBook(id);
 
-        if(!deleted) {
+        if (!deleted) {
             throw new AppError('Livro não encontrado para deletar');
         }
+
+
+        await Promise.all([
+            redisClient.del(this.CACHE_KEY_ALL),
+            redisClient.del(this.getCacheKeyItem(id))
+        ]);
 
         return true;
     }
