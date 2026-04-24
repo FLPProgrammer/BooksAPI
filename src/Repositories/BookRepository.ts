@@ -18,6 +18,7 @@ export class BookRepository {
 
     createBook(book: IBook) {
          this.books.push(book);
+         return book;
     }
 
     updateBook(id: number, updatedData: Partial<IBook>): IBook | null {
