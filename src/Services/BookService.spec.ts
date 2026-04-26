@@ -1,152 +1,302 @@
-import { BookService } from './BookService';
-import { BookRepository } from '../Repositories/BookRepository';
-import { IBook } from '../Types/Book';
-import { AppError } from '../Utils/AppError';
+import { BookService } from './BookService'
+import { IBookRepository } from '../Interfaces/IBookRepository'
+import { ICacheProvider } from '../Interfaces/ICacheProvider'
+import { IBook } from '../Types/Book'
+import { AppError } from '../Utils/AppError'
 
 describe('BookService', () => {
-    let service: BookService;
-    let repository: jest.Mocked<BookRepository>;
 
-    beforeEach(() => {
-        repository = {
-            getAllBooks: jest.fn(),
-            getBook: jest.fn(),
-            createBook: jest.fn(),
-            updateBook: jest.fn(),
-            deleteBook: jest.fn()
-        } as unknown as jest.Mocked<BookRepository>;
+  let service: BookService
+  let repository: jest.Mocked<IBookRepository>
+  let cache: jest.Mocked<ICacheProvider>
 
-        service = new BookService(repository);
-    });
+  beforeEach(() => {
 
-    it('deve retornar todos os livros', () => {
-        const books: IBook[] = [
-            {
-                id: 1,
-                name: 'Livro',
-                author: 'Autor',
-                url: 'url',
-                description: 'description'
-            }
-        ];
+    repository = {
+      getAllBooks: jest.fn(),
+      getBook: jest.fn(),
+      createBook: jest.fn(),
+      updateBook: jest.fn(),
+      deleteBook: jest.fn()
+    } as unknown as jest.Mocked<IBookRepository>
 
-        repository.getAllBooks.mockReturnValue(books);
 
-        const result = service.getAllBooks();
+    cache = {
+      get: jest.fn(),
+      set: jest.fn(),
+      del: jest.fn()
+    } as unknown as jest.Mocked<ICacheProvider>
 
-        expect(result).toEqual(books);
-        expect(repository.getAllBooks).toHaveBeenCalled();
-    });
 
-    it('deve lançar erro se não houver livros', () => {
-        repository.getAllBooks.mockReturnValue([]);
+    cache.get.mockResolvedValue(null)
+    cache.set.mockResolvedValue()
+    cache.del.mockResolvedValue()
 
-        expect(() => service.getAllBooks())
-            .toThrow('Nenhum livro foi encontrado');
-    });
 
-    it('deve retornar um livro por ID', () => {
-        const book: IBook = {
-            id: 1,
-            name: 'Livro',
-            author: 'Autor',
-            url: 'url',
-            description: 'description'
-        };
+    service = new BookService(
+      repository,
+      cache
+    )
 
-        repository.getBook.mockReturnValue(book);
+  })
 
-        const result = service.getBook(1);
 
-        expect(result).toEqual(book);
-    });
+  it('deve retornar todos os livros', async () => {
 
-    it('deve lançar erro se livro não existir', () => {
-        repository.getBook.mockReturnValue(undefined);
+    const books: IBook[] = [
+      {
+        id:1,
+        name:'Livro',
+        author:'Autor',
+        url:'url',
+        description:'description'
+      }
+    ]
 
-        expect(() => service.getBook(1))
-            .toThrow(AppError);
-    });
+    repository
+      .getAllBooks
+      .mockResolvedValue(books)
 
-    it('deve criar um livro com sucesso', () => {
-        const book: IBook = {
-            id: 1,
-            name: 'Livro',
-            author: 'Autor',
-            url: 'url',
-            description: 'description'
-        };
+    const result =
+      await service.getAllBooks()
 
-        repository.getBook.mockReturnValue(undefined);
+    expect(result).toEqual(books)
 
-        service.createBook(book);
+    expect(
+      repository.getAllBooks
+    ).toHaveBeenCalled()
 
-        expect(repository.createBook).toHaveBeenCalledWith(book);
-    });
+  })
 
-    it('deve lançar erro se dados inválidos', () => {
-        const book: IBook = {
-            id: 1,
-            name: '',
-            author: '',
-            url: 'url',
-            description: 'description'
-        };
 
-        expect(() => service.createBook(book))
-            .toThrow('Dados inválidos!');
-    });
+  it(
+   'deve lançar erro se não houver livros',
+   async () => {
 
-    it('deve lançar erro se livro já existir', () => {
-        const book: IBook = {
-            id: 1,
-            name: 'Livro',
-            author: 'Autor',
-            url: 'url',
-            description: 'description'
-        };
+    repository
+      .getAllBooks
+      .mockResolvedValue([])
 
-        repository.getBook.mockReturnValue(book);
+    await expect(
+      service.getAllBooks()
+    ).rejects.toThrow(
+      'Nenhum livro foi encontrado'
+    )
 
-        expect(() => service.createBook(book))
-            .toThrow('Esse livro já existe');
-    });
+  })
 
-    it('deve atualizar um livro', () => {
-        const updated: IBook = {
-            id: 1,
-            name: 'Novo',
-            author: 'Autor',
-            url: 'url',
-            description: 'description'
-        };
 
-        repository.updateBook.mockReturnValue(updated);
+  it(
+   'deve retornar um livro por ID',
+   async () => {
 
-        const result = service.updateBook(1, { name: 'Novo' });
+    const book: IBook = {
+      id:1,
+      name:'Livro',
+      author:'Autor',
+      url:'url',
+      description:'description'
+    }
 
-        expect(result).toEqual(updated);
-    });
+    repository
+      .getBook
+      .mockResolvedValue(book)
 
-    it('deve lançar erro se livro não existir', () => {
-        repository.updateBook.mockReturnValue(null);
+    const result =
+      await service.getBook(1)
 
-        expect(() => service.updateBook(1, {}))
-            .toThrow('Livro não encontrado!');
-    });
+    expect(result).toEqual(book)
 
-    it('deve deletar um livro', () => {
-        repository.deleteBook.mockReturnValue(true);
+  })
 
-        const result = service.deleteBook(1);
 
-        expect(result).toBe(true);
-    });
+  it(
+   'deve lançar erro se livro não existir',
+   async () => {
 
-    it('deve lançar erro se não encontrar livro', () => {
-        repository.deleteBook.mockReturnValue(false);
+    repository
+      .getBook
+      .mockResolvedValue(null)
 
-        expect(() => service.deleteBook(1))
-            .toThrow('Livro não encontrado para deletar');
-    });
-});
+    await expect(
+      service.getBook(1)
+    ).rejects.toThrow(AppError)
+
+  })
+
+
+  it(
+   'deve criar um livro com sucesso',
+   async () => {
+
+    const book: IBook = {
+      id:1,
+      name:'Livro',
+      author:'Autor',
+      url:'url',
+      description:'description'
+    }
+
+    repository
+      .getBook
+      .mockResolvedValue(null)
+
+    repository
+      .createBook
+      .mockResolvedValue(book)
+
+    await service.createBook(book)
+
+    expect(
+      repository.createBook
+    ).toHaveBeenCalledWith(book)
+
+  })
+
+
+  it(
+   'deve lançar erro se dados inválidos',
+   async () => {
+
+    const book: IBook = {
+      id:1,
+      name:'',
+      author:'',
+      url:'url',
+      description:'description'
+    }
+
+    await expect(
+      service.createBook(book)
+    ).rejects.toThrow(
+      'Dados inválidos!'
+    )
+
+  })
+
+
+  it(
+   'deve lançar erro se livro já existe',
+   async () => {
+
+    const book: IBook = {
+      id:1,
+      name:'Livro',
+      author:'Autor',
+      url:'url',
+      description:'description'
+    }
+
+    repository
+      .getBook
+      .mockResolvedValue(book)
+
+    await expect(
+      service.createBook(book)
+    ).rejects.toThrow(
+      'Esse livro já existe'
+    )
+
+  })
+
+
+  it(
+   'deve atualizar um livro',
+   async () => {
+
+    const updated: IBook = {
+      id:1,
+      name:'Novo',
+      author:'Autor',
+      url:'url',
+      description:'description'
+    }
+
+    repository
+      .updateBook
+      .mockResolvedValue(updated)
+
+    const result =
+      await service.updateBook(
+        1,
+        { name:'Novo' }
+      )
+
+    expect(result).toEqual(updated)
+
+  })
+
+
+it(
+ 'deve lançar erro se livro não existir',
+ async () => {
+
+  repository
+    .getBook
+    .mockResolvedValue(null)
+
+  await expect(
+    service.getBook(1)
+  ).rejects.toThrow(AppError)
+
+})
+
+
+  it(
+   'deve deletar um livro',
+   async () => {
+
+    repository
+      .deleteBook
+      .mockResolvedValue(true)
+
+    const result =
+      await service.deleteBook(1)
+
+    expect(result).toBe(true)
+
+  })
+
+
+  it(
+   'deve lançar erro se não encontrar livro',
+   async () => {
+
+    repository
+      .deleteBook
+      .mockResolvedValue(false)
+
+    await expect(
+      service.deleteBook(1)
+    ).rejects.toThrow(
+      'Livro não encontrado para deletar'
+    )
+
+  })
+
+
+  it(
+   'deve retornar do cache sem consultar repository',
+   async () => {
+
+    const book = {
+      id:1,
+      name:'Cache',
+      author:'Autor',
+      url: 'Url',
+      description: 'Description'
+    }
+
+    cache.get.mockResolvedValue(
+      JSON.stringify(book)
+    )
+
+    await service.getBook(1)
+
+    expect(
+      repository.getBook
+    ).not.toHaveBeenCalled()
+
+  })
+
+})

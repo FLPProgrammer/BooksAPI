@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { BookController } from '../Controllers/BookController';
 import { BookRepository } from '../Repositories/BookRepository';
 import { BookService } from '../Services/BookService';
+import { RedisCacheProvider } from '../Providers/RedisCacheProvider'
 
 import { validate } from '../Middlewares/validate';
 import { asyncHandler } from '../Middlewares/asyncHandler';
@@ -15,8 +16,9 @@ import {
 
 export const bookRoutes = Router();
 
+const cache = new RedisCacheProvider()
 const bookRepository = new BookRepository();
-const bookService = new BookService(bookRepository);
+const bookService = new BookService(bookRepository, cache);
 const bookController = new BookController(bookService);
 
 

@@ -1,10 +1,10 @@
-import { BookRepository } from './BookRepository';
+import { BookRepositoryMock } from './BookRepositoryMock';
 
 describe('BookRepository', () => {
-    let repository: BookRepository;
+    let repository: BookRepositoryMock;
 
     beforeEach(() => {
-        repository = new BookRepository()
+        repository = new BookRepositoryMock()
     });
 
     it('deve retornar todos os livros do mock inicial', () => {

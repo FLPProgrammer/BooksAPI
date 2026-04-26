@@ -1,41 +1,64 @@
-import { IBook } from '../Types/Book'
-import { mockBooks } from '../Database/mockBooks';
+import { prisma } from '../Utils/Prisma'
+import { Prisma, Book } from '../generated/prisma/client'
+import { IBookRepository } from '../Interfaces/IBookRepository'
 
-export class BookRepository {
-    private books: IBook[];
 
-    constructor() {
-        this.books = mockBooks
-    }
-    
-    getAllBooks(): IBook[] {
-       return this.books;
-    }
+export class BookRepository
+implements IBookRepository {
 
-    getBook(id: number): IBook | undefined {
-        return this.books.find(book => book.id === id);
-    }
 
-    createBook(book: IBook) {
-         this.books.push(book);
-         return book;
-    }
+ async getAllBooks(): Promise<Book[]> {
 
-    updateBook(id: number, updatedData: Partial<IBook>): IBook | null {
-        const book = this.getBook(id);
+   return prisma.book.findMany()
 
-        if (!book) return null;
+ }
 
-        Object.assign(book, updatedData);
-        return book;
-    }
 
-    deleteBook(id: number): boolean {
-        const index = this.books.findIndex(book => book.id === id);
+ async getBook(
+   id:number
+ ): Promise<Book | null> {
 
-        if(index === -1) return false;
+   return prisma.book.findUnique({
+      where:{ id }
+   })
 
-        this.books.splice(index, 1);
-        return true;
-    }
+ }
+
+
+ async createBook(
+   data: Prisma.BookCreateInput
+ ): Promise<Book> {
+
+   return prisma.book.create({
+      data
+   })
+
+ }
+
+
+ async updateBook(
+   id:number,
+   data: Prisma.BookUpdateInput
+ ): Promise<Book> {
+
+   return prisma.book.update({
+      where:{ id },
+      data
+   })
+
+ }
+
+
+ async deleteBook(
+   id:number
+ ): Promise<boolean> {
+
+   await prisma.book.delete({
+      where:{ id }
+   })
+
+   return true
+
+ }
+
 }
